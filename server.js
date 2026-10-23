@@ -38,7 +38,7 @@ function readAddress(src) {
   const street = clean(src.street);
   const city = clean(src.city);
   const state = clean(src.state).toUpperCase();
-  const zip = clean(src.zip).replace(/D/g, '').slice(0, 5);
+  const zip = clean(src.zip).replace(/\D/g, '').slice(0, 5);
   return { street, city, state, zip, oneLine: `${street}, ${city}, ${state} ${zip}` };
 }
 
