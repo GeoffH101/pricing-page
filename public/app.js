@@ -60,17 +60,7 @@
       var ul = $('flags');
       ul.innerHTML = '';
       (d.flags || []).forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
-      var first = $('firstName').value.trim(), last = $('lastName').value.trim(), phone = $('phone').value.trim(), email = $('email').value.trim();
-      var who = (first + ' ' + last).trim();
-      state.summary = (who ? 'Customer: ' + who + '\n' : '') + (phone ? 'Phone: ' + phone + '\n' : '') + (email ? 'Email: ' + email + '\n' : '')
-        + 'Gutter cleaning: ' + fmtMoney(d.price) + '\n' + d.address + '\n' + fmtNum(d.sqft) + ' sq ft'
-        + (guards ? '\nGutter guards: ' + (guards === 'yes' ? 'Yes' : 'No') : '')
-        + (stories ? '\nStories: ' + (stories === '3' ? '3 or more' : stories) : '')
-        + (roof ? '\nRoof: ' + $('roof').options[$('roof').selectedIndex].text : '')
-        + (solar ? '\nSolar panels: ' + (solar === 'yes' ? 'Yes' : 'No') : '')
-        + (lastCleaned ? '\nLast cleaned: ' + $('lastCleaned').options[$('lastCleaned').selectedIndex].text : '')
-        + (access.length ? '\nHard to reach: ' + access.join(', ') : '')
-        + ((d.flags || []).length ? '\nNote: ' + d.flags.join(' ') : '');
+      state.payload = { address: state.address, sqft: sqft, gutterGuards: guards, stories: stories, roofType: roof, solar: solar, lastCleaned: lastCleaned, access: access };
       setMsg('msg3', '');
       show('step2', false);
       show('step3', true);
@@ -79,12 +69,56 @@
     }).then(function () { $('quote').disabled = false; });
   }
 
-  function copy() {
-    var chosen = (document.querySelector('input[name=estimate]:checked') || {}).value;
-    var text = (state.summary || '') + (chosen ? '\nNext step: ' + chosen : '');
-    function done() { setMsg('msg3', 'Copied.'); }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { setMsg('msg3', 'Could not copy. Select and copy the price manually.'); });
-    else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { setMsg('msg3', 'Could not copy.'); } document.body.removeChild(ta); }
+  function safeName(s) { return String(s || '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+  // Builds the quote as a PDF on the server, then hands it to the phone's share sheet
+  // (Mail, Messages, ...). Where there is no share sheet it downloads the file and opens
+  // an email to the customer for the rep to attach it to.
+  function sendQuote() {
+    if (!state.payload) return;
+    var estimate = (document.querySelector('input[name=estimate]:checked') || {}).value || '';
+    var body = {};
+    Object.keys(state.payload).forEach(function (k) { body[k] = state.payload[k]; });
+    body.firstName = $('firstName').value.trim();
+    body.lastName = $('lastName').value.trim();
+    body.phone = $('phone').value.trim();
+    body.email = $('email').value.trim();
+    body.nextStep = estimate;
+    var btn = $('send');
+    btn.disabled = true;
+    setMsg('msg3', 'Building the quote file...');
+    fetch('/api/quote-pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) {
+      if (!r.ok) throw new Error('pdf');
+      return r.blob();
+    }).then(function (blob) {
+      var name = 'Gutter-Quote-' + (safeName(body.lastName) || 'Customer') + '.pdf';
+      var file = new File([blob], name, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: 'Gutter cleaning quote', text: 'Your gutter cleaning quote' }).then(function () {
+          setMsg('msg3', 'Quote ready to send.');
+        }, function (err) {
+          setMsg('msg3', err && err.name === 'AbortError' ? 'Not sent. Tap Send quote to try again.' : 'Could not open the share menu. Tap Send quote to try again.');
+        });
+      }
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      if (body.email) {
+        setMsg('msg3', 'Saved ' + name + '. Attach it to the email that opens.');
+        var nl = String.fromCharCode(10);
+        var mail = 'mailto:' + encodeURIComponent(body.email) + '?subject=' + encodeURIComponent('Your gutter cleaning quote') + '&body=' + encodeURIComponent('Hi' + (body.firstName ? ' ' + body.firstName : '') + ',' + nl + nl + 'Your gutter cleaning quote is attached.' + nl);
+        setTimeout(function () { window.location.href = mail; }, 700);
+      } else {
+        setMsg('msg3', 'Saved ' + name + '. Attach it to an email to the customer.');
+      }
+    }).catch(function () {
+      setMsg('msg3', 'Could not build the quote file. Try again.');
+    }).then(function () { btn.disabled = false; });
   }
 
   function formatPhone() {
@@ -115,6 +149,6 @@
   $('address').addEventListener('keydown', function (e) { if (e.key === 'Enter') lookup(); });
   $('quote').addEventListener('click', getPrice);
   $('sqft').addEventListener('keydown', function (e) { if (e.key === 'Enter') getPrice(); });
-  $('copy').addEventListener('click', copy);
+  $('send').addEventListener('click', sendQuote);
   $('again').addEventListener('click', again);
 })();

@@ -21,7 +21,7 @@ button{display:block;width:100%;margin-top:16px;padding:14px;font-size:17px;font
 button.secondary{background:var(--tile);color:var(--fg);border:1px solid var(--line);margin-top:0}
 button:disabled{opacity:.6;cursor:default}
 .row{display:flex;gap:10px;margin-top:16px}
-.row button{flex:1}
+.row button{flex:1;margin-top:0}
 .msg{min-height:20px;margin:10px 0 0;font-size:14px;color:var(--err)}
 #msg3{color:var(--mut)}
 .hint{margin:6px 0 0;font-size:13px;color:var(--mut)}
