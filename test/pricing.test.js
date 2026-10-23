@@ -36,6 +36,22 @@ assert.strictEqual(p(h('East Hampton'), 2000), 399);
 assert.strictEqual(p(h('Montauk'), 2000), 449);
 assert.strictEqual(quote(h('Montauk'), 3000).flags.length, 1);
 assert.strictEqual(quote(h('Montauk'), 2500).flags.length, 0);
+// add-ons: gutter guards (yes) and 3+ stories
+const g = (loc, sq) => quote(loc, sq, { gutterGuards: 'yes' }).price - quote(loc, sq, {}).price;
+assert.strictEqual(g(li, 2000), 50);
+assert.strictEqual(g(li, 2499), 50);
+assert.strictEqual(g(li, 2500), 100);
+assert.strictEqual(g(li, 4500), 100);
+assert.strictEqual(g(li, 4501), 150);
+assert.strictEqual(g(nyc('Queens'), 5000), 150);
+assert.strictEqual(quote(li, 3000, { gutterGuards: 'no' }).price, p(li, 3000));
+const s3 = (loc, sq) => quote(loc, sq, { stories: '3' }).price - quote(loc, sq, {}).price;
+assert.strictEqual(s3(li, 2000), 50);
+assert.strictEqual(s3(li, 2500), 100);
+assert.strictEqual(s3(li, 6000), 100);
+assert.strictEqual(quote(li, 2000, { stories: '1' }).price, p(li, 2000));
+assert.strictEqual(quote(li, 2000, { stories: '2' }).price, p(li, 2000));
+assert.strictEqual(quote(li, 2000, { gutterGuards: 'yes', stories: '3' }).price, 269 + 50 + 50);
 // bad input and out of area
 assert.ok(quote(li, 'abc').error);
 assert.ok(quote(li, 100).error);

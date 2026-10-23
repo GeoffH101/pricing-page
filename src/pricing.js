@@ -44,6 +44,16 @@ function tablePrice(table, sqft) {
   return table[table.length - 1] + blocks * o.addPerBlock;
 }
 
+// first matching tier's add-on: { lessThan }, { lessThanOrEqual } or a catch-all
+function tierAdd(tiers, sqft) {
+  for (const t of tiers) {
+    if (t.lessThan != null) { if (sqft < t.lessThan) return t.add; }
+    else if (t.lessThanOrEqual != null) { if (sqft <= t.lessThanOrEqual) return t.add; }
+    else return t.add;
+  }
+  return 0;
+}
+
 function extraBlocks(sqft, baseUpTo, blockSqft, roundUp) {
   if (sqft <= baseUpTo) return 0;
   return roundUp ? Math.ceil((sqft - baseUpTo) / blockSqft) : (sqft - baseUpTo) / blockSqft;
@@ -69,8 +79,8 @@ function quote(loc, sqft, answers = {}) {
     if (sq > h.baseUpToSqft) flags.push('This home is over 2,500 sq ft. Confirm the price with the office.');
   }
   const adj = cfg.adjustments;
-  if (answers.gutterGuards && adj.gutterGuards[answers.gutterGuards]) price += adj.gutterGuards[answers.gutterGuards];
-  if (answers.stories && adj.stories[answers.stories]) price += adj.stories[answers.stories];
+  if (answers.gutterGuards === 'yes') price += tierAdd(adj.gutterGuards.whenYes, sq);
+  if (String(answers.stories) === '3') price += tierAdd(adj.threeOrMoreStories, sq);
   return { price, label: loc.label, flags };
 }
 

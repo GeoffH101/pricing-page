@@ -48,6 +48,7 @@
     if (!sqft || sqft < 300) { setMsg('msg2', 'Enter the home square footage.'); return; }
     var guards = (document.querySelector('input[name=guards]:checked') || {}).value || '';
     var stories = $('stories').value;
+    var access = Array.prototype.map.call(document.querySelectorAll('input[name=access]:checked'), function (c) { return c.value; });
     $('quote').disabled = true;
     postJson('/api/quote', { address: state.address, sqft: sqft, gutterGuards: guards, stories: stories }).then(function (d) {
       if (!d.ok) { setMsg('msg2', d.message || 'Could not price that.'); return; }
@@ -59,6 +60,7 @@
       state.summary = 'Gutter cleaning: ' + fmtMoney(d.price) + '\n' + d.address + '\n' + fmtNum(d.sqft) + ' sq ft'
         + (guards ? '\nGutter guards: ' + (guards === 'yes' ? 'Yes' : 'No') : '')
         + (stories ? '\nStories: ' + (stories === '3' ? '3 or more' : stories) : '')
+        + (access.length ? '\nHard to reach: ' + access.join(', ') : '')
         + ((d.flags || []).length ? '\nNote: ' + d.flags.join(' ') : '');
       setMsg('msg3', '');
       show('step2', false);
@@ -79,7 +81,7 @@
     $('address').value = '';
     $('sqft').value = '';
     $('stories').value = '';
-    Array.prototype.forEach.call(document.querySelectorAll('input[name=guards]'), function (r) { r.checked = false; });
+    Array.prototype.forEach.call(document.querySelectorAll('input[name=guards], input[name=access]'), function (r) { r.checked = false; });
     show('step3', false);
     show('step2', false);
     show('step1', true);
