@@ -77,7 +77,8 @@
   }
 
   function copy() {
-    var text = state.summary || '';
+    var chosen = (document.querySelector('input[name=estimate]:checked') || {}).value;
+    var text = (state.summary || '') + (chosen ? '\nNext step: ' + chosen : '');
     function done() { setMsg('msg3', 'Copied.'); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { setMsg('msg3', 'Could not copy. Select and copy the price manually.'); });
     else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { setMsg('msg3', 'Could not copy.'); } document.body.removeChild(ta); }
@@ -89,7 +90,7 @@
     $('stories').value = '';
     $('roof').value = '';
     $('lastCleaned').value = '';
-    Array.prototype.forEach.call(document.querySelectorAll('input[name=guards], input[name=access], input[name=solar]'), function (r) { r.checked = false; });
+    Array.prototype.forEach.call(document.querySelectorAll('input[name=guards], input[name=access], input[name=solar], input[name=estimate]'), function (r) { r.checked = false; });
     show('step3', false);
     show('step2', false);
     show('step1', true);

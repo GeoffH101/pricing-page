@@ -30,5 +30,8 @@ button:disabled{opacity:.6;cursor:default}
 .result{text-align:center}
 .price{font-size:56px;font-weight:700;font-variant-numeric:tabular-nums;margin:4px 0}
 .line{color:var(--mut);font-size:15px}
+.status{margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--line);text-align:left}
+.status legend{padding:0 8px 0 0;margin:0}
+.status .opt{display:flex;margin:0 0 10px;font-size:17px}
 .flags{list-style:none;padding:0;margin:12px 0 0;text-align:left}
 .flags li{background:var(--tile);border-left:4px solid var(--acc);padding:8px 10px;border-radius:4px;font-size:14px;margin-top:6px}
