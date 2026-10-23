@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Gutter Cleaning Pricing</title>
+  <title>New Customer Quote</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main>
     <header>
-      <h1>Gutter cleaning pricing</h1>
-      <p class="sub">New customer quote. Enter the address and answer a few questions.</p>
+      <h1>New customer quote</h1>
+      <p class="sub" id="sub">Enter the customer and the address.</p>
     </header>
 
     <section class="card" id="step1">
@@ -51,6 +51,20 @@
         <button id="continueAnyway" type="button">Continue anyway</button>
         <button id="recheck" type="button" class="secondary">Check the address again</button>
       </div>
+    </section>
+
+    <section class="card hidden" id="stepSvc">
+      <div class="found">
+        <div class="k">Address</div>
+        <div id="svcAddr" class="v"></div>
+      </div>
+      <fieldset class="svc">
+        <legend>What services do they want? (pick all that apply)</legend>
+        <div id="svcList"></div>
+      </fieldset>
+      <button id="svcContinue" type="button">Continue</button>
+      <button id="svcBack" type="button" class="secondary">Back</button>
+      <p class="msg" id="msgSvc" role="alert"></p>
     </section>
 
     <section class="card hidden" id="step2">
@@ -113,20 +127,27 @@
       </fieldset>
 
       <button id="quote" type="button">Get price</button>
+      <button id="gcBack" type="button" class="secondary">Back</button>
       <p class="msg" id="msg2" role="alert"></p>
     </section>
 
     <section class="card result hidden" id="step3" aria-live="polite">
-      <div class="k">Gutter cleaning</div>
-      <div class="price" id="price"></div>
-      <div id="resultLine" class="line"></div>
-      <ul id="flags" class="flags"></ul>
+      <div id="priceBlock" class="hidden">
+        <div class="k">Gutter cleaning</div>
+        <div class="price" id="price"></div>
+        <div id="resultLine" class="line"></div>
+        <ul id="flags" class="flags"></ul>
+      </div>
+      <div class="summary">
+        <div class="k">Services requested</div>
+        <ul id="summary"></ul>
+      </div>
       <fieldset class="status">
         <legend>Next step</legend>
         <label class="opt"><input type="radio" name="estimate" value="Estimate Approved"> Estimate Approved</label>
         <label class="opt"><input type="radio" name="estimate" value="Send Estimate"> Send Estimate</label>
       </fieldset>
-      <div class="cardbox">
+      <div class="cardbox hidden" id="cardbox">
         <h2>Credit card info</h2>
         <p>Your card is held on file and will not be charged until after the work is complete. Without a card on file we cannot book the service.</p>
         <p>You will receive a text link to securely fill in your credit card information.</p>

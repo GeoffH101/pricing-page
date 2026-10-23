@@ -107,29 +107,48 @@ const LABELS = {
   lastCleaned: { within_year: 'Within the past year', over_year: 'Over a year ago', never: 'Never cleaned', unsure: 'Not sure' },
 };
 const ACCESS = ['Steep roof', 'Tall or tight access', 'Fences or landscaping in the way'];
+const SERVICES = ['Gutter Installation', 'Gutter Repair', 'Dryer Vent Cleaning', 'Roof Washing', 'Roof Repair', 'Power Washing', 'Gutter Cleaning'];
+const cleanNotes = (s) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+
 app.post('/api/quote-pdf', rateLimit, async (req, res) => {
   const b = req.body || {};
   try {
-    const r = await priceFor(b);
-    if (!r.ok) return res.status(400).json(r);
-    const a = r.answers;
-    const access = (Array.isArray(b.access) ? b.access : []).filter((x) => ACCESS.includes(x));
-    const details = {
-      'Gutter guards': a.gutterGuards && LABELS.gutterGuards[a.gutterGuards],
-      'Stories': a.stories && LABELS.stories[a.stories],
-      'Roof': a.roofType && LABELS.roofType[a.roofType],
-      'Solar panels': a.solar && LABELS.solar[a.solar],
-      'Gutters last cleaned': a.lastCleaned && LABELS.lastCleaned[a.lastCleaned],
-      'Hard to reach': access.join(', '),
-    };
+    const a = readAddress(b);
+    if (!AREA_STATES.includes(a.state)) return res.status(400).json({ ok: false, message: OUTSIDE });
+    if (a.zip.length !== 5 || !a.street || !a.city) return res.status(400).json({ ok: false, message: 'Fill in the address, city, state and 5-digit ZIP code.' });
+    const services = (Array.isArray(b.services) ? b.services : [])
+      .map((x) => ({ name: String((x && x.name) || ''), notes: x && x.name !== 'Gutter Cleaning' ? cleanNotes(x.notes) : '' }))
+      .filter((x, i, all) => SERVICES.includes(x.name) && all.findIndex((y) => y.name === x.name) === i);
+    if (!services.length) return res.status(400).json({ ok: false, message: 'Pick at least one service.' });
+    services.sort((x, y) => SERVICES.indexOf(x.name) - SERVICES.indexOf(y.name));
+    const hasGutterCleaning = services.some((x) => x.name === 'Gutter Cleaning');
+
+    let price = null, sqft = null, details = {}, addressText = a.oneLine;
+    if (hasGutterCleaning) {
+      const r = await priceFor(b);
+      if (!r.ok) return res.status(400).json(r);
+      const an = r.answers;
+      const access = (Array.isArray(b.access) ? b.access : []).filter((x) => ACCESS.includes(x));
+      price = r.price; sqft = r.sqft; addressText = r.address;
+      details = {
+        'Gutter guards': an.gutterGuards && LABELS.gutterGuards[an.gutterGuards],
+        'Stories': an.stories && LABELS.stories[an.stories],
+        'Roof': an.roofType && LABELS.roofType[an.roofType],
+        'Solar panels': an.solar && LABELS.solar[an.solar],
+        'Gutters last cleaned': an.lastCleaned && LABELS.lastCleaned[an.lastCleaned],
+        'Hard to reach': access.join(', '),
+      };
+    } else {
+      try { const geo = await geocode(a.oneLine); if (geo) addressText = geo.matched; } catch (e) { /* keep the typed address */ }
+    }
+    const nextStep = ['Estimate Approved', 'Send Estimate'].includes(b.nextStep) ? b.nextStep : '';
     const name = [clean(b.firstName), clean(b.lastName)].filter(Boolean).join(' ');
     const pdf = await buildQuotePdf({
-      price: r.price, address: r.address, sqft: r.sqft, area: r.area,
+      price, address: addressText, sqft, services,
       customer: { name, phone: clean(b.phone), email: clean(b.email) },
-      answers: details,
-      nextStep: ['Estimate Approved', 'Send Estimate'].includes(b.nextStep) ? b.nextStep : '',
+      answers: details, nextStep, showCardNotice: nextStep === 'Estimate Approved',
     });
-    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="gutter-cleaning-quote.pdf"', 'Cache-Control': 'no-store' });
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="quote.pdf"', 'Cache-Control': 'no-store' });
     return res.send(pdf);
   } catch (err) {
     console.error('pdf failed:', err.message);

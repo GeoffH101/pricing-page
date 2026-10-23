@@ -42,5 +42,20 @@ button:disabled{opacity:.6;cursor:default}
 .notice{margin-top:14px;padding:12px 14px;background:var(--tile);border:1px solid var(--line);border-left:4px solid var(--err);border-radius:8px}
 .notice p{margin:0;font-weight:600}
 .notice button{margin-top:10px}
+.svc{margin:0 0 4px}
+.svc legend{font-size:15px;margin-bottom:10px}
+.svcitem{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg)}
+.svcitem .opt{display:flex;margin:0;font-size:17px;font-weight:600}
+.svcitem.on{border-color:var(--acc)}
+.svcnote{margin-top:10px}
+.svcnote label{font-weight:400;font-size:13px;color:var(--mut);margin:0 0 4px}
+.svcnote textarea{width:100%;min-height:84px;font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);resize:vertical}
+.svchint{margin:6px 0 0 30px;font-size:13px;color:var(--mut);font-weight:400}
+button + button{margin-top:10px}
+.summary{margin-top:14px;text-align:left}
+.summary ul{list-style:none;margin:6px 0 0;padding:0}
+.summary li{padding:8px 0;border-top:1px solid var(--line);font-size:16px}
+.summary li:first-child{border-top:0}
+.summary li small{display:block;color:var(--mut);font-size:14px;margin-top:2px;white-space:pre-wrap}
 .flags{list-style:none;padding:0;margin:12px 0 0;text-align:left}
 .flags li{background:var(--tile);border-left:4px solid var(--acc);padding:8px 10px;border-radius:4px;font-size:14px;margin-top:6px}
