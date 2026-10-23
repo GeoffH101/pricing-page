@@ -9,7 +9,9 @@ h1{font-size:24px;margin:0 0 4px}
 .hidden{display:none}
 label,legend{display:block;font-weight:600;font-size:14px;margin:12px 0 6px;padding:0}
 label:first-child{margin-top:0}
-input[type=text],input[type=number],select{width:100%;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two label{margin-top:0}
+input[type=text],input[type=number],input[type=tel],input[type=email],select{width:100%;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
 fieldset{border:0;margin:12px 0 0;padding:0}
 .opt{display:inline-flex;align-items:center;gap:8px;font-weight:400;margin:0 18px 0 0;font-size:16px}

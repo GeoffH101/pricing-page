@@ -60,7 +60,10 @@
       var ul = $('flags');
       ul.innerHTML = '';
       (d.flags || []).forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
-      state.summary = 'Gutter cleaning: ' + fmtMoney(d.price) + '\n' + d.address + '\n' + fmtNum(d.sqft) + ' sq ft'
+      var first = $('firstName').value.trim(), last = $('lastName').value.trim(), phone = $('phone').value.trim(), email = $('email').value.trim();
+      var who = (first + ' ' + last).trim();
+      state.summary = (who ? 'Customer: ' + who + '\n' : '') + (phone ? 'Phone: ' + phone + '\n' : '') + (email ? 'Email: ' + email + '\n' : '')
+        + 'Gutter cleaning: ' + fmtMoney(d.price) + '\n' + d.address + '\n' + fmtNum(d.sqft) + ' sq ft'
         + (guards ? '\nGutter guards: ' + (guards === 'yes' ? 'Yes' : 'No') : '')
         + (stories ? '\nStories: ' + (stories === '3' ? '3 or more' : stories) : '')
         + (roof ? '\nRoof: ' + $('roof').options[$('roof').selectedIndex].text : '')
@@ -84,7 +87,17 @@
     else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { setMsg('msg3', 'Could not copy.'); } document.body.removeChild(ta); }
   }
 
+  function formatPhone() {
+    var digits = $('phone').value.replace(/\D/g, '');
+    if (digits.length === 11 && digits.charAt(0) === '1') digits = digits.slice(1);
+    if (digits.length === 10) $('phone').value = '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
+  }
+
   function again() {
+    $('firstName').value = '';
+    $('lastName').value = '';
+    $('phone').value = '';
+    $('email').value = '';
     $('address').value = '';
     $('sqft').value = '';
     $('stories').value = '';
@@ -97,6 +110,7 @@
     $('address').focus();
   }
 
+  $('phone').addEventListener('blur', formatPhone);
   $('lookup').addEventListener('click', lookup);
   $('address').addEventListener('keydown', function (e) { if (e.key === 'Enter') lookup(); });
   $('quote').addEventListener('click', getPrice);

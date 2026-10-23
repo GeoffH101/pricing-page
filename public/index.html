@@ -15,6 +15,21 @@
     </header>
 
     <section class="card" id="step1">
+      <div class="two">
+        <div>
+          <label for="firstName">First name</label>
+          <input id="firstName" type="text" autocomplete="given-name">
+        </div>
+        <div>
+          <label for="lastName">Last name</label>
+          <input id="lastName" type="text" autocomplete="family-name">
+        </div>
+      </div>
+      <label for="phone">Phone</label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(555) 555-5555">
+      <label for="email">Email</label>
+      <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com">
+
       <label for="address">Property address</label>
       <input id="address" type="text" autocomplete="street-address" placeholder="123 Main St, Town, State ZIP" inputmode="text">
       <button id="lookup" type="button">Look up address</button>
