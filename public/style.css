@@ -35,5 +35,9 @@ button:disabled{opacity:.6;cursor:default}
 .status{margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--line);text-align:left}
 .status legend{padding:0 8px 0 0;margin:0}
 .status .opt{display:flex;margin:0 0 10px;font-size:17px}
+.cardbox{margin-top:16px;padding:12px 14px;background:var(--tile);border:1px solid var(--line);border-radius:8px;text-align:left}
+.cardbox h2{font-size:16px;margin:0 0 6px}
+.cardbox p{margin:0 0 8px;font-size:15px}
+.cardbox p:last-child{margin-bottom:0;font-weight:600}
 .flags{list-style:none;padding:0;margin:12px 0 0;text-align:left}
 .flags li{background:var(--tile);border-left:4px solid var(--acc);padding:8px 10px;border-radius:4px;font-size:14px;margin-top:6px}
