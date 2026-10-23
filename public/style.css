@@ -1,0 +1,33 @@
+:root{--bg:#f4f6f5;--fg:#1c2420;--mut:#5d6a63;--card:#fff;--line:#dbe2de;--acc:#1f6f4a;--accfg:#fff;--err:#b3261e;--tile:#eef2ef}
+@media (prefers-color-scheme:dark){:root{--bg:#111613;--fg:#e8eee9;--mut:#93a097;--card:#19201c;--line:#2b3530;--acc:#4fb886;--accfg:#0d1a13;--err:#ff8a80;--tile:#222b26}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45}
+main{max-width:520px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 18px;font-size:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.hidden{display:none}
+label,legend{display:block;font-weight:600;font-size:14px;margin:12px 0 6px;padding:0}
+label:first-child{margin-top:0}
+input[type=text],input[type=number],select{width:100%;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+fieldset{border:0;margin:12px 0 0;padding:0}
+.opt{display:inline-flex;align-items:center;gap:8px;font-weight:400;margin:0 18px 0 0;font-size:16px}
+.opt input{width:20px;height:20px}
+button{display:block;width:100%;margin-top:16px;padding:14px;font-size:17px;font-weight:600;border:0;border-radius:8px;background:var(--acc);color:var(--accfg);cursor:pointer}
+button.secondary{background:var(--tile);color:var(--fg);border:1px solid var(--line);margin-top:0}
+button:disabled{opacity:.6;cursor:default}
+.row{display:flex;gap:10px;margin-top:16px}
+.row button{flex:1}
+.msg{min-height:20px;margin:10px 0 0;font-size:14px;color:var(--err)}
+#msg3{color:var(--mut)}
+.hint{margin:6px 0 0;font-size:13px;color:var(--mut)}
+.found{background:var(--tile);border-radius:8px;padding:10px 12px;margin-bottom:6px}
+.k{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.v{font-weight:600}
+.area{font-size:14px;color:var(--mut)}
+.result{text-align:center}
+.price{font-size:56px;font-weight:700;font-variant-numeric:tabular-nums;margin:4px 0}
+.line{color:var(--mut);font-size:15px}
+.flags{list-style:none;padding:0;margin:12px 0 0;text-align:left}
+.flags li{background:var(--tile);border-left:4px solid var(--acc);padding:8px 10px;border-radius:4px;font-size:14px;margin-top:6px}

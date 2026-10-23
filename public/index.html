@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Gutter Cleaning Pricing</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Gutter cleaning pricing</h1>
+      <p class="sub">New customer quote. Enter the address and answer a few questions.</p>
+    </header>
+
+    <section class="card" id="step1">
+      <label for="address">Property address</label>
+      <input id="address" type="text" autocomplete="street-address" placeholder="123 Main St, Town, State ZIP" inputmode="text">
+      <button id="lookup" type="button">Look up address</button>
+      <p class="msg" id="msg1" role="alert"></p>
+    </section>
+
+    <section class="card hidden" id="step2">
+      <div class="found">
+        <div class="k">Address</div>
+        <div id="foundAddr" class="v"></div>
+        <div id="foundArea" class="area"></div>
+      </div>
+
+      <label for="sqft">Home square footage</label>
+      <input id="sqft" type="number" inputmode="numeric" min="300" max="30000" step="1" placeholder="e.g. 2400">
+      <p class="hint" id="sqftHint"></p>
+
+      <fieldset>
+        <legend>Does the home have gutter guards?</legend>
+        <label class="opt"><input type="radio" name="guards" value="no"> No</label>
+        <label class="opt"><input type="radio" name="guards" value="yes"> Yes</label>
+      </fieldset>
+
+      <label for="stories">Number of stories</label>
+      <select id="stories">
+        <option value="">Select</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3 or more</option>
+      </select>
+
+      <button id="quote" type="button">Get price</button>
+      <p class="msg" id="msg2" role="alert"></p>
+    </section>
+
+    <section class="card result hidden" id="step3" aria-live="polite">
+      <div class="k">Gutter cleaning</div>
+      <div class="price" id="price"></div>
+      <div id="resultLine" class="line"></div>
+      <ul id="flags" class="flags"></ul>
+      <div class="row">
+        <button id="copy" type="button" class="secondary">Copy quote</button>
+        <button id="again" type="button" class="secondary">New quote</button>
+      </div>
+      <p class="msg" id="msg3"></p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

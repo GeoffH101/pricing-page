@@ -1,0 +1,37 @@
+{
+  "service": "Gutter Cleaning - New Customer Pricing",
+  "bandMaxSqft": [2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000],
+  "tables": {
+    "longIslandNJ": [269, 269, 294, 344, 383, 439, 484, 534, 579],
+    "connecticutWestchester": [269, 299, 344, 394, 439, 489, 544, 594, 629]
+  },
+  "over6000": { "addPerBlock": 100, "blockSqft": 1000, "roundUpToNextBlock": true },
+  "connecticut": {
+    "surcharge": 50,
+    "surchargeCounties": {
+      "Hartford": ["Avon", "Berlin", "Bloomfield", "Bristol", "Burlington", "Canton", "East Granby", "East Hartford", "East Windsor", "Enfield", "Farmington", "Glastonbury", "Granby", "Hartford", "Hartland", "Manchester", "Marlborough", "New Britain", "Newington", "Plainville", "Rocky Hill", "Simsbury", "Southington", "South Windsor", "Suffield", "West Hartford", "Wethersfield", "Windsor", "Windsor Locks"],
+      "Middlesex": ["Chester", "Clinton", "Cromwell", "Deep River", "Durham", "East Haddam", "East Hampton", "Essex", "Haddam", "Killingworth", "Middlefield", "Middletown", "Old Saybrook", "Portland", "Westbrook"],
+      "New London": ["Bozrah", "Colchester", "East Lyme", "Franklin", "Griswold", "Groton", "Lebanon", "Ledyard", "Lisbon", "Lyme", "Montville", "New London", "North Stonington", "Norwich", "Old Lyme", "Preston", "Salem", "Sprague", "Stonington", "Voluntown", "Waterford"]
+    }
+  },
+  "nyc": {
+    "baseUpToSqft": 2500,
+    "addPerBlock": 95,
+    "blockSqft": 1000,
+    "roundUpToNextBlock": true,
+    "base": { "Queens": 399, "Brooklyn": 479, "Manhattan": 479, "Staten Island": 479, "Bronx": 479 }
+  },
+  "hamptons": {
+    "baseUpToSqft": 2500,
+    "areas": {
+      "Riverhead / Westhampton": { "base": 269, "zips": ["11977", "11978", "11959", "11960", "11972", "11942", "11941"] },
+      "Southampton": { "base": 349, "zips": ["11968", "11969", "11946", "11976", "11932", "11962"] },
+      "East Hampton": { "base": 399, "zips": ["11937", "11930", "11975", "11963"] },
+      "Montauk": { "base": 449, "zips": ["11954"] }
+    }
+  },
+  "adjustments": {
+    "gutterGuards": { "yes": 0, "no": 0 },
+    "stories": { "1": 0, "2": 0, "3": 0 }
+  }
+}
