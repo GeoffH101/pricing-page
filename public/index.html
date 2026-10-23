@@ -30,10 +30,27 @@
       <label for="email">Email</label>
       <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com">
 
-      <label for="address">Property address</label>
-      <input id="address" type="text" autocomplete="street-address" placeholder="123 Main St, Town, State ZIP" inputmode="text">
+      <label for="street">Address</label>
+      <input id="street" type="text" autocomplete="address-line1" placeholder="123 Main St">
+      <label for="city">City</label>
+      <input id="city" type="text" autocomplete="address-level2">
+      <div class="two" style="margin-top:12px">
+        <div>
+          <label for="state">State</label>
+          <select id="state" autocomplete="address-level1"></select>
+        </div>
+        <div>
+          <label for="zip">ZIP code</label>
+          <input id="zip" type="text" inputmode="numeric" maxlength="10" autocomplete="postal-code">
+        </div>
+      </div>
       <button id="lookup" type="button">Look up address</button>
       <p class="msg" id="msg1" role="alert"></p>
+      <div class="notice hidden" id="notfound">
+        <p>We can't find that address.</p>
+        <button id="continueAnyway" type="button">Continue anyway</button>
+        <button id="recheck" type="button" class="secondary">Check the address again</button>
+      </div>
     </section>
 
     <section class="card hidden" id="step2">

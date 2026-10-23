@@ -29,6 +29,29 @@ function classify(geo) {
   return { kind: 'out', label: 'Outside the service area' };
 }
 
+// Used when the address can't be found on a map: price from the state, city and ZIP the rep typed.
+function classifyFallback({ state, city, zip }) {
+  const st = String(state || '').toUpperCase();
+  const z = String(zip || '').slice(0, 5);
+  const c = String(city || '').trim();
+  if (st === 'NJ') return { kind: 'longIslandNJ', label: 'New Jersey' };
+  if (st === 'CT') return classify({ state: 'CT', town: c, city: c, zip: z });
+  if (st !== 'NY') return { kind: 'out', label: 'Outside the service area' };
+  const p3 = z.slice(0, 3);
+  const p5 = z;
+  const area = Object.entries(cfg.hamptons.areas).find(([, a]) => a.zips.includes(p5));
+  if (area) return { kind: 'hamptons', label: `East End - ${area[0]}`, area: area[0] };
+  if (/queens|glen oaks/i.test(c) && /^110(01|04|05)$/.test(p5)) return { kind: 'nyc', label: 'Queens', borough: 'Queens' };
+  if (['100', '101', '102'].includes(p3)) return { kind: 'nyc', label: 'Manhattan', borough: 'Manhattan' };
+  if (p3 === '103') return { kind: 'nyc', label: 'Staten Island', borough: 'Staten Island' };
+  if (p3 === '104') return { kind: 'nyc', label: 'Bronx', borough: 'Bronx' };
+  if (p3 === '112') return { kind: 'nyc', label: 'Brooklyn', borough: 'Brooklyn' };
+  if (['111', '113', '114', '116'].includes(p3)) return { kind: 'nyc', label: 'Queens', borough: 'Queens' };
+  if (['105', '106', '107', '108'].includes(p3)) return { kind: 'connecticutWestchester', label: 'Westchester', surchargeCounty: null };
+  if (['110', '115', '117', '118', '119'].includes(p3)) return { kind: 'longIslandNJ', label: 'Long Island' };
+  return { kind: 'noPrice', label: 'No pricing for this area' };
+}
+
 function bandIndex(sqft) {
   const i = cfg.bandMaxSqft.findIndex((max) => sqft <= max);
   return i;
@@ -63,7 +86,8 @@ function extraBlocks(sqft, baseUpTo, blockSqft, roundUp) {
 function quote(loc, sqft, answers = {}) {
   const sq = Number(sqft);
   if (!Number.isFinite(sq) || sq < 300 || sq > 30000) return { error: 'Enter the home\'s square footage (between 300 and 30,000).' };
-  if (loc.kind === 'out') return { error: 'This address is outside our pricing areas. Please check with the office.' };
+  if (loc.kind === 'out') return { error: 'This address is outside our area.' };
+  if (loc.kind === 'noPrice') return { error: 'We do not have pricing for this area. Please check with the office.' };
   const flags = [];
   let price;
   if (loc.kind === 'longIslandNJ') price = tablePrice(cfg.tables.longIslandNJ, sq);
@@ -87,4 +111,4 @@ function quote(loc, sqft, answers = {}) {
   return { price, label: loc.label, flags };
 }
 
-module.exports = { classify, quote, tablePrice, NYC_COUNTIES };
+module.exports = { classify, classifyFallback, quote, tablePrice, NYC_COUNTIES };

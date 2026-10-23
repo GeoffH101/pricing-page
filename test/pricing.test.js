@@ -1,6 +1,6 @@
 // Checks the price rules against the owner's sheet (every $249 became $269) and the rules agreed in chat.
 const assert = require('assert');
-const { classify, quote } = require('../src/pricing');
+const { classify, classifyFallback, quote } = require('../src/pricing');
 
 const li = { kind: 'longIslandNJ', label: 'Long Island' };
 const ct = { kind: 'connecticutWestchester', label: 'Connecticut', surchargeCounty: null };
@@ -86,5 +86,27 @@ assert.strictEqual(classify({ state: 'CT', town: 'Haddam town', city: 'Haddam' }
 assert.strictEqual(classify({ state: 'CT', town: 'Greenwich town', city: 'Greenwich' }).surchargeCounty, null);
 assert.strictEqual(classify({ state: 'PA', county: 'Pike County' }).kind, 'out');
 assert.strictEqual(classify({ state: 'NY', county: 'Rockland County' }).kind, 'out');
+
+// when the address can't be found: price from the typed state / city / ZIP
+const fb = (state, city, zip) => classifyFallback({ state, city, zip });
+assert.strictEqual(fb('NJ', 'Totowa', '07512').kind, 'longIslandNJ');
+assert.strictEqual(fb('CT', 'Plainville', '06062').surchargeCounty, 'Hartford');
+assert.strictEqual(fb('CT', 'Greenwich', '06830').surchargeCounty, null);
+assert.strictEqual(fb('NY', 'Queens', '11692').borough, 'Queens');
+assert.strictEqual(fb('NY', 'Brooklyn', '11238').borough, 'Brooklyn');
+assert.strictEqual(fb('NY', 'New York', '10001').borough, 'Manhattan');
+assert.strictEqual(fb('NY', 'Bronx', '10471').borough, 'Bronx');
+assert.strictEqual(fb('NY', 'Staten Island', '10301').borough, 'Staten Island');
+assert.strictEqual(fb('NY', 'Yonkers', '10701').kind, 'connecticutWestchester');
+assert.strictEqual(fb('NY', 'Garden City', '11530').kind, 'longIslandNJ');
+assert.strictEqual(fb('NY', 'Melville', '11747').kind, 'longIslandNJ');
+assert.strictEqual(fb('NY', 'Montauk', '11954').area, 'Montauk');
+assert.strictEqual(fb('NY', 'Floral Park', '11001').kind, 'longIslandNJ');
+assert.strictEqual(fb('NY', 'Queens', '11001').borough, 'Queens');
+assert.strictEqual(fb('NY', 'Albany', '12207').kind, 'noPrice');
+assert.strictEqual(fb('NY', 'Nyack', '10960').kind, 'noPrice');
+assert.strictEqual(fb('PA', 'Scranton', '18503').kind, 'out');
+assert.ok(quote(fb('NY', 'Albany', '12207'), 2000).error);
+assert.strictEqual(quote(fb('NJ', 'Totowa', '07512'), 3000).price, 294);
 
 console.log('all pricing checks passed');

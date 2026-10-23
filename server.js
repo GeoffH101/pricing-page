@@ -5,7 +5,7 @@ const path = require('path');
 const express = require('express');
 const { geocode } = require('./src/geocode');
 const { lookupSqft } = require('./src/sqft');
-const { classify, quote } = require('./src/pricing');
+const { classify, classifyFallback, quote } = require('./src/pricing');
 const { buildQuotePdf } = require('./src/pdf');
 
 const app = express();
@@ -30,16 +30,36 @@ setInterval(() => { const now = Date.now(); hits.forEach((v, k) => { if (!v.some
 
 const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 200);
 
+const AREA_STATES = ['CT', 'NY', 'NJ'];
+const OUTSIDE = 'That address is outside our area. We only serve Connecticut, New York and New Jersey.';
+
+// Address, City, State and ZIP arrive as separate fields.
+function readAddress(src) {
+  const street = clean(src.street);
+  const city = clean(src.city);
+  const state = clean(src.state).toUpperCase();
+  const zip = clean(src.zip).replace(/D/g, '').slice(0, 5);
+  return { street, city, state, zip, oneLine: `${street}, ${city}, ${state} ${zip}` };
+}
+
 app.get('/api/lookup', rateLimit, async (req, res) => {
-  const address = clean(req.query.address);
-  if (address.length < 6) return res.json({ ok: false, message: 'Enter a full street address, including the town or ZIP.' });
+  const a = readAddress(req.query);
+  if (!a.street || !a.city || !a.state || a.zip.length !== 5) return res.json({ ok: false, message: 'Fill in the address, city, state and 5-digit ZIP code.' });
+  if (!AREA_STATES.includes(a.state)) return res.json({ ok: false, outside: true, message: OUTSIDE });
   try {
-    const geo = await geocode(address);
-    if (!geo) return res.json({ ok: false, message: 'We could not find that address. Check the spelling and include the town or ZIP.' });
+    const geo = await geocode(a.oneLine);
+    if (!geo) {
+      // can't find it on the map: price from the state, city and ZIP, and let the rep continue
+      const loc = classifyFallback(a);
+      if (loc.kind === 'out') return res.json({ ok: false, outside: true, message: OUTSIDE });
+      if (loc.kind === 'noPrice') return res.json({ ok: false, message: 'We could not find that address, and we do not have pricing for this area. Please check with the office.' });
+      return res.json({ ok: true, found: false, address: a.oneLine, area: loc.label, serviceable: true, sqft: null, sqftSource: null });
+    }
     const loc = classify(geo);
+    if (loc.kind === 'out') return res.json({ ok: false, outside: true, message: OUTSIDE });
     let found = null;
-    if (loc.kind !== 'out') { try { found = await lookupSqft(geo); } catch (e) { found = null; } }
-    return res.json({ ok: true, address: geo.matched, area: loc.label, serviceable: loc.kind !== 'out', sqft: found ? found.sqft : null, sqftSource: found ? found.source : null });
+    if (loc.kind !== 'noPrice') { try { found = await lookupSqft(geo); } catch (e) { found = null; } }
+    return res.json({ ok: true, found: true, address: geo.matched, area: loc.label, serviceable: true, sqft: found ? found.sqft : null, sqftSource: found ? found.source : null });
   } catch (err) {
     console.error('lookup failed:', err.message);
     return res.status(502).json({ ok: false, message: 'The address lookup is not responding. Please try again in a moment.' });
@@ -49,9 +69,12 @@ app.get('/api/lookup', rateLimit, async (req, res) => {
 // Prices one quote request from the page's answers (the page never sends a price).
 const pick = (v, list) => (list.includes(v) ? v : null);
 async function priceFor(b) {
-  const geo = await geocode(clean(b.address));
-  if (!geo) return { ok: false, message: 'We could not find that address.' };
-  const loc = classify(geo);
+  const a = readAddress(b);
+  if (!AREA_STATES.includes(a.state)) return { ok: false, message: OUTSIDE };
+  if (a.zip.length !== 5 || !a.street || !a.city) return { ok: false, message: 'Fill in the address, city, state and 5-digit ZIP code.' };
+  const geo = await geocode(a.oneLine);
+  const loc = geo ? classify(geo) : classifyFallback(a);
+  const addressText = geo ? geo.matched : a.oneLine;
   const answers = {
     gutterGuards: pick(b.gutterGuards, ['yes', 'no']),
     stories: pick(String(b.stories), ['1', '2', '3']),
@@ -61,7 +84,7 @@ async function priceFor(b) {
   };
   const q = quote(loc, b.sqft, answers);
   if (q.error) return { ok: false, message: q.error };
-  return { ok: true, price: q.price, area: q.label, flags: q.flags, address: geo.matched, sqft: Math.round(Number(b.sqft)), answers };
+  return { ok: true, price: q.price, area: q.label, flags: q.flags, address: addressText, sqft: Math.round(Number(b.sqft)), answers };
 }
 
 app.post('/api/quote', rateLimit, async (req, res) => {

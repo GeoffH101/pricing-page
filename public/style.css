@@ -39,5 +39,8 @@ button:disabled{opacity:.6;cursor:default}
 .cardbox h2{font-size:16px;margin:0 0 6px}
 .cardbox p{margin:0 0 8px;font-size:15px}
 .cardbox p:last-child{margin-bottom:0;font-weight:600}
+.notice{margin-top:14px;padding:12px 14px;background:var(--tile);border:1px solid var(--line);border-left:4px solid var(--err);border-radius:8px}
+.notice p{margin:0;font-weight:600}
+.notice button{margin-top:10px}
 .flags{list-style:none;padding:0;margin:12px 0 0;text-align:left}
 .flags li{background:var(--tile);border-left:4px solid var(--acc);padding:8px 10px;border-radius:4px;font-size:14px;margin-top:6px}
