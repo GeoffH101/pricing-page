@@ -81,6 +81,9 @@ function quote(loc, sqft, answers = {}) {
   const adj = cfg.adjustments;
   if (answers.gutterGuards === 'yes') price += tierAdd(adj.gutterGuards.whenYes, sq);
   if (String(answers.stories) === '3') price += tierAdd(adj.threeOrMoreStories, sq);
+  if (answers.roofType && answers.roofType !== 'asphalt') price += adj.roofNotAsphaltShingle;
+  if (answers.solar === 'yes') price += adj.solarPanels;
+  if (answers.lastCleaned === 'over_year' || answers.lastCleaned === 'never') price += tierAdd(adj.lastCleanedOverAYear, sq);
   return { price, label: loc.label, flags };
 }
 

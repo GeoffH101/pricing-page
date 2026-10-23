@@ -52,6 +52,19 @@ assert.strictEqual(s3(li, 6000), 100);
 assert.strictEqual(quote(li, 2000, { stories: '1' }).price, p(li, 2000));
 assert.strictEqual(quote(li, 2000, { stories: '2' }).price, p(li, 2000));
 assert.strictEqual(quote(li, 2000, { gutterGuards: 'yes', stories: '3' }).price, 269 + 50 + 50);
+// roof type, solar panels, last cleaning
+assert.strictEqual(quote(li, 2000, { roofType: 'asphalt' }).price, p(li, 2000));
+['slate', 'cedar', 'tile', 'metal', 'flat', 'other'].forEach((r) => assert.strictEqual(quote(li, 2000, { roofType: r }).price, p(li, 2000) + 100, r));
+assert.strictEqual(quote(li, 2000, { solar: 'yes' }).price, p(li, 2000) + 50);
+assert.strictEqual(quote(li, 2000, { solar: 'no' }).price, p(li, 2000));
+const lc = (sq, v) => quote(li, sq, { lastCleaned: v }).price - quote(li, sq, {}).price;
+assert.strictEqual(lc(2000, 'over_year'), 50);
+assert.strictEqual(lc(3000, 'over_year'), 100);
+assert.strictEqual(lc(5000, 'over_year'), 150);
+assert.strictEqual(lc(3000, 'never'), 100);
+assert.strictEqual(lc(3000, 'within_year'), 0);
+assert.strictEqual(lc(3000, 'unsure'), 0);
+assert.strictEqual(quote(li, 3000, { gutterGuards: 'yes', stories: '3', roofType: 'slate', solar: 'yes', lastCleaned: 'over_year' }).price, p(li, 3000) + 100 + 100 + 100 + 50 + 100);
 // bad input and out of area
 assert.ok(quote(li, 'abc').error);
 assert.ok(quote(li, 100).error);

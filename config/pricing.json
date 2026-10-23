@@ -197,6 +197,21 @@
         "add": 100
       }
     ],
-    "hardToReachAreas": "note only - no price change"
+    "hardToReachAreas": "note only - no price change",
+    "roofNotAsphaltShingle": 100,
+    "solarPanels": 50,
+    "lastCleanedOverAYear": [
+      {
+        "lessThan": 2500,
+        "add": 50
+      },
+      {
+        "lessThanOrEqual": 4500,
+        "add": 100
+      },
+      {
+        "add": 150
+      }
+    ]
   }
 }

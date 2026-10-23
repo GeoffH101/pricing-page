@@ -52,7 +52,14 @@ app.post('/api/quote', rateLimit, async (req, res) => {
     const geo = await geocode(address);
     if (!geo) return res.json({ ok: false, message: 'We could not find that address.' });
     const loc = classify(geo);
-    const q = quote(loc, b.sqft, { gutterGuards: ['yes', 'no'].includes(b.gutterGuards) ? b.gutterGuards : null, stories: ['1', '2', '3'].includes(String(b.stories)) ? String(b.stories) : null });
+    const pick = (v, list) => (list.includes(v) ? v : null);
+    const q = quote(loc, b.sqft, {
+      gutterGuards: pick(b.gutterGuards, ['yes', 'no']),
+      stories: pick(String(b.stories), ['1', '2', '3']),
+      roofType: pick(b.roofType, ['asphalt', 'slate', 'cedar', 'tile', 'metal', 'flat', 'other']),
+      solar: pick(b.solar, ['yes', 'no']),
+      lastCleaned: pick(b.lastCleaned, ['within_year', 'over_year', 'never', 'unsure']),
+    });
     if (q.error) return res.json({ ok: false, message: q.error });
     return res.json({ ok: true, price: q.price, area: q.label, flags: q.flags, address: geo.matched, sqft: Math.round(Number(b.sqft)) });
   } catch (err) {

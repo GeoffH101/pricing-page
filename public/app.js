@@ -49,8 +49,11 @@
     var guards = (document.querySelector('input[name=guards]:checked') || {}).value || '';
     var stories = $('stories').value;
     var access = Array.prototype.map.call(document.querySelectorAll('input[name=access]:checked'), function (c) { return c.value; });
+    var roof = $('roof').value;
+    var solar = (document.querySelector('input[name=solar]:checked') || {}).value || '';
+    var lastCleaned = $('lastCleaned').value;
     $('quote').disabled = true;
-    postJson('/api/quote', { address: state.address, sqft: sqft, gutterGuards: guards, stories: stories }).then(function (d) {
+    postJson('/api/quote', { address: state.address, sqft: sqft, gutterGuards: guards, stories: stories, roofType: roof, solar: solar, lastCleaned: lastCleaned }).then(function (d) {
       if (!d.ok) { setMsg('msg2', d.message || 'Could not price that.'); return; }
       $('price').textContent = fmtMoney(d.price);
       $('resultLine').textContent = fmtNum(d.sqft) + ' sq ft, ' + d.area;
@@ -60,6 +63,9 @@
       state.summary = 'Gutter cleaning: ' + fmtMoney(d.price) + '\n' + d.address + '\n' + fmtNum(d.sqft) + ' sq ft'
         + (guards ? '\nGutter guards: ' + (guards === 'yes' ? 'Yes' : 'No') : '')
         + (stories ? '\nStories: ' + (stories === '3' ? '3 or more' : stories) : '')
+        + (roof ? '\nRoof: ' + $('roof').options[$('roof').selectedIndex].text : '')
+        + (solar ? '\nSolar panels: ' + (solar === 'yes' ? 'Yes' : 'No') : '')
+        + (lastCleaned ? '\nLast cleaned: ' + $('lastCleaned').options[$('lastCleaned').selectedIndex].text : '')
         + (access.length ? '\nHard to reach: ' + access.join(', ') : '')
         + ((d.flags || []).length ? '\nNote: ' + d.flags.join(' ') : '');
       setMsg('msg3', '');
@@ -81,7 +87,9 @@
     $('address').value = '';
     $('sqft').value = '';
     $('stories').value = '';
-    Array.prototype.forEach.call(document.querySelectorAll('input[name=guards], input[name=access]'), function (r) { r.checked = false; });
+    $('roof').value = '';
+    $('lastCleaned').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('input[name=guards], input[name=access], input[name=solar]'), function (r) { r.checked = false; });
     show('step3', false);
     show('step2', false);
     show('step1', true);

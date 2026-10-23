@@ -46,6 +46,33 @@
         <option value="3">3 or more</option>
       </select>
 
+      <label for="roof">Roof type</label>
+      <select id="roof">
+        <option value="">Select</option>
+        <option value="asphalt">Asphalt shingle (regular)</option>
+        <option value="slate">Slate</option>
+        <option value="cedar">Cedar or wood shake</option>
+        <option value="tile">Tile</option>
+        <option value="metal">Metal</option>
+        <option value="flat">Flat or rubber roof</option>
+        <option value="other">Other</option>
+      </select>
+
+      <fieldset>
+        <legend>Solar panels on the roof?</legend>
+        <label class="opt"><input type="radio" name="solar" value="no"> No</label>
+        <label class="opt"><input type="radio" name="solar" value="yes"> Yes</label>
+      </fieldset>
+
+      <label for="lastCleaned">When were the gutters last cleaned?</label>
+      <select id="lastCleaned">
+        <option value="">Select</option>
+        <option value="within_year">Within the past year</option>
+        <option value="over_year">Over a year ago</option>
+        <option value="never">Never cleaned</option>
+        <option value="unsure">Not sure</option>
+      </select>
+
       <fieldset>
         <legend>Any hard-to-reach areas? (notes only)</legend>
         <label class="opt"><input type="checkbox" name="access" value="Steep roof"> Steep roof</label>
