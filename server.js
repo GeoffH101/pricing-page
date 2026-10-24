@@ -192,7 +192,9 @@ app.post('/api/submit-lead', rateLimit, async (req, res) => {
   }
 });
 
-app.get('/health', (req, res) => res.json({ ok: true }));
+// build marker + whether the sheet settings are present (yes/no only, never the values)
+const BUILD = '2026-10-24-a';
+app.get('/health', (req, res) => res.json({ ok: true, build: BUILD, leadsConfigured: Boolean(LEADS_WEBAPP_URL && LEADS_KEY) }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3100;
