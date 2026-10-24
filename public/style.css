@@ -24,6 +24,7 @@ button:disabled{opacity:.6;cursor:default}
 .row button{flex:1;margin-top:0}
 .msg{min-height:20px;margin:10px 0 0;font-size:14px;color:var(--err)}
 #msg3{color:var(--mut)}
+#msg3.ok{color:var(--acc);font-weight:600}
 .hint{margin:6px 0 0;font-size:13px;color:var(--mut)}
 .found{background:var(--tile);border-radius:8px;padding:10px 12px;margin-bottom:6px}
 .k{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}

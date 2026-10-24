@@ -1,7 +1,7 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var state = { addr: null, pending: null, lookup: null, services: [], gc: null };
-  var STATES = [['', 'Select'], ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'], ['CO', 'Colorado'], ['CT', 'Connecticut'], ['DE', 'Delaware'], ['DC', 'District of Columbia'], ['FL', 'Florida'], ['GA', 'Georgia'], ['HI', 'Hawaii'], ['ID', 'Idaho'], ['IL', 'Illinois'], ['IN', 'Indiana'], ['IA', 'Iowa'], ['KS', 'Kansas'], ['KY', 'Kentucky'], ['LA', 'Louisiana'], ['ME', 'Maine'], ['MD', 'Maryland'], ['MA', 'Massachusetts'], ['MI', 'Michigan'], ['MN', 'Minnesota'], ['MS', 'Mississippi'], ['MO', 'Missouri'], ['MT', 'Montana'], ['NE', 'Nebraska'], ['NV', 'Nevada'], ['NH', 'New Hampshire'], ['NJ', 'New Jersey'], ['NM', 'New Mexico'], ['NY', 'New York'], ['NC', 'North Carolina'], ['ND', 'North Dakota'], ['OH', 'Ohio'], ['OK', 'Oklahoma'], ['OR', 'Oregon'], ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'], ['SD', 'South Dakota'], ['TN', 'Tennessee'], ['TX', 'Texas'], ['UT', 'Utah'], ['VT', 'Vermont'], ['VA', 'Virginia'], ['WA', 'Washington'], ['WV', 'West Virginia'], ['WI', 'Wisconsin'], ['WY', 'Wyoming']];
+  var STATES = [['', 'Select'], ['CT', 'CT'], ['NY', 'NY'], ['NJ', 'NJ'], ['OTHER', 'Other']];
   var AREA_STATES = ['CT', 'NY', 'NJ'];
   var OUTSIDE = 'That address is outside our area. We only serve Connecticut, New York and New Jersey.';
   // top to bottom; the second value says whether the service gets a notes box (gutter cleaning goes to its own pricing questions)
@@ -24,7 +24,7 @@
   STATES.forEach(function (s) {
     var o = document.createElement('option');
     o.value = s[0];
-    o.textContent = s[0] ? s[0] + ' - ' + s[1] : s[1];
+    o.textContent = s[1];
     $('state').appendChild(o);
   });
 
@@ -186,9 +186,13 @@
       if (s.notes) { var sm = document.createElement('small'); sm.textContent = s.notes; li.appendChild(sm); }
       sum.appendChild(li);
     });
-    Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.checked = false; });
+    Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.checked = false; r.disabled = false; });
     show('cardbox', false);
     setMsg('msg3', '');
+    $('msg3').classList.remove('ok');
+    $('send').disabled = false;
+    $('send').textContent = 'Submit';
+    state.submissionId = newSubmissionId();
     showStep('step3');
   }
 
@@ -198,14 +202,15 @@
     show('cardbox', chosen === 'Estimate Approved');
   }
 
-  function safeName(s) { return String(s || '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  function newSubmissionId() {
+    return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
 
-  // Builds the quote as a PDF on the server, then hands it to the phone's share sheet
-  // (Mail, Messages, ...). Where there is no share sheet it downloads the file and opens
-  // an email to the customer for the rep to attach it to.
-  function sendQuote() {
+  // Sends the finished quote to the Leads sheet (through the server) and locks the page so it can't go twice.
+  function submitLead() {
     if (!state.addr) return;
     var estimate = (document.querySelector('input[name=estimate]:checked') || {}).value || '';
+    if (!estimate) { setMsg('msg3', 'Choose Estimate Approved or Send Estimate first.'); return; }
     var body = { street: state.addr.street, city: state.addr.city, state: state.addr.state, zip: state.addr.zip, services: state.services };
     if (state.gc) Object.keys(state.gc).forEach(function (k) { body[k] = state.gc[k]; });
     body.firstName = $('firstName').value.trim();
@@ -213,41 +218,22 @@
     body.phone = $('phone').value.trim();
     body.email = $('email').value.trim();
     body.nextStep = estimate;
+    body.submissionId = state.submissionId;
     var btn = $('send');
     btn.disabled = true;
-    setMsg('msg3', 'Building the quote file...');
-    fetch('/api/quote-pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) {
-      if (!r.ok) throw new Error('pdf');
-      return r.blob();
-    }).then(function (blob) {
-      var name = 'Quote-' + (safeName(body.lastName) || 'Customer') + '.pdf';
-      var file = new File([blob], name, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share({ files: [file], title: 'Your quote', text: 'Your quote' }).then(function () {
-          setMsg('msg3', 'Quote ready to send.');
-        }, function (err) {
-          setMsg('msg3', err && err.name === 'AbortError' ? 'Not sent. Tap Send quote to try again.' : 'Could not open the share menu. Tap Send quote to try again.');
-        });
-      }
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-      if (body.email) {
-        setMsg('msg3', 'Saved ' + name + '. Attach it to the email that opens.');
-        var nl = String.fromCharCode(10);
-        var mail = 'mailto:' + encodeURIComponent(body.email) + '?subject=' + encodeURIComponent('Your quote') + '&body=' + encodeURIComponent('Hi' + (body.firstName ? ' ' + body.firstName : '') + ',' + nl + nl + 'Your quote is attached.' + nl);
-        setTimeout(function () { window.location.href = mail; }, 700);
-      } else {
-        setMsg('msg3', 'Saved ' + name + '. Attach it to an email to the customer.');
-      }
+    btn.textContent = 'Submitting...';
+    setMsg('msg3', '');
+    postJson('/api/submit-lead', body).then(function (d) {
+      if (!d.ok) { setMsg('msg3', d.message || 'Could not submit. Try again.'); btn.disabled = false; btn.textContent = 'Submit'; return; }
+      btn.textContent = 'Submitted';
+      Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.disabled = true; });
+      setMsg('msg3', 'Submitted. The lead is now on the Leads sheet.');
+      $('msg3').classList.add('ok');
     }).catch(function () {
-      setMsg('msg3', 'Could not build the quote file. Try again.');
-    }).then(function () { btn.disabled = false; });
+      setMsg('msg3', 'Could not reach the server. Try again.');
+      btn.disabled = false;
+      btn.textContent = 'Submit';
+    });
   }
 
   function formatPhone() {
@@ -278,6 +264,6 @@
   $('quote').addEventListener('click', getPrice);
   $('sqft').addEventListener('keydown', function (e) { if (e.key === 'Enter') getPrice(); });
   Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.addEventListener('change', updateCardBox); });
-  $('send').addEventListener('click', sendQuote);
+  $('send').addEventListener('click', submitLead);
   $('again').addEventListener('click', again);
 })();

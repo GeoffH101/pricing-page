@@ -6,7 +6,6 @@ const express = require('express');
 const { geocode } = require('./src/geocode');
 const { lookupSqft } = require('./src/sqft');
 const { classify, classifyFallback, quote } = require('./src/pricing');
-const { buildQuotePdf } = require('./src/pdf');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -110,26 +109,50 @@ const ACCESS = ['Steep roof', 'Tall or tight access', 'Fences or landscaping in 
 const SERVICES = ['Gutter Installation', 'Gutter Repair', 'Dryer Vent Cleaning', 'Roof Washing', 'Roof Repair', 'Power Washing', 'Gutter Cleaning'];
 const cleanNotes = (s) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 600);
 
-app.post('/api/quote-pdf', rateLimit, async (req, res) => {
+// Where finished quotes go: the Leads tab of the Spotless Leads sheet, through a small web app
+// (PricingPage.gs). Both values are private settings on Railway.
+const LEADS_WEBAPP_URL = process.env.LEADS_WEBAPP_URL || '';
+const LEADS_KEY = process.env.LEADS_KEY || '';
+
+// The text that goes in the lead's Message column.
+function buildMessage({ services, price, sqft, area, details, nextStep }) {
+  const lines = ['Services requested:'];
+  services.forEach((s) => {
+    lines.push('- ' + s.name);
+    if (s.notes) lines.push('   Notes: ' + s.notes);
+  });
+  if (price != null) {
+    lines.push('');
+    lines.push('Gutter cleaning: $' + Number(price).toLocaleString('en-US') + ' (' + Number(sqft).toLocaleString('en-US') + ' sq ft' + (area ? ', ' + area : '') + ')');
+    Object.keys(details).filter((k) => details[k]).forEach((k) => lines.push(k + ': ' + details[k]));
+  }
+  lines.push('');
+  lines.push('Next step: ' + nextStep);
+  return lines.join('\n');
+}
+
+app.post('/api/submit-lead', rateLimit, async (req, res) => {
   const b = req.body || {};
   try {
+    if (!LEADS_WEBAPP_URL || !LEADS_KEY) return res.status(503).json({ ok: false, message: 'Submitting is not set up yet. Please tell the office.' });
     const a = readAddress(b);
     if (!AREA_STATES.includes(a.state)) return res.status(400).json({ ok: false, message: OUTSIDE });
     if (a.zip.length !== 5 || !a.street || !a.city) return res.status(400).json({ ok: false, message: 'Fill in the address, city, state and 5-digit ZIP code.' });
+    const nextStep = ['Estimate Approved', 'Send Estimate'].includes(b.nextStep) ? b.nextStep : '';
+    if (!nextStep) return res.status(400).json({ ok: false, message: 'Choose Estimate Approved or Send Estimate first.' });
     const services = (Array.isArray(b.services) ? b.services : [])
       .map((x) => ({ name: String((x && x.name) || ''), notes: x && x.name !== 'Gutter Cleaning' ? cleanNotes(x.notes) : '' }))
       .filter((x, i, all) => SERVICES.includes(x.name) && all.findIndex((y) => y.name === x.name) === i);
     if (!services.length) return res.status(400).json({ ok: false, message: 'Pick at least one service.' });
     services.sort((x, y) => SERVICES.indexOf(x.name) - SERVICES.indexOf(y.name));
-    const hasGutterCleaning = services.some((x) => x.name === 'Gutter Cleaning');
 
-    let price = null, sqft = null, details = {}, addressText = a.oneLine;
-    if (hasGutterCleaning) {
-      const r = await priceFor(b);
+    let price = null, sqft = null, area = '', details = {}, addressText = a.oneLine;
+    if (services.some((x) => x.name === 'Gutter Cleaning')) {
+      const r = await priceFor(b); // the price is always worked out here, never taken from the page
       if (!r.ok) return res.status(400).json(r);
       const an = r.answers;
       const access = (Array.isArray(b.access) ? b.access : []).filter((x) => ACCESS.includes(x));
-      price = r.price; sqft = r.sqft; addressText = r.address;
+      price = r.price; sqft = r.sqft; area = r.area; addressText = r.address;
       details = {
         'Gutter guards': an.gutterGuards && LABELS.gutterGuards[an.gutterGuards],
         'Stories': an.stories && LABELS.stories[an.stories],
@@ -141,18 +164,31 @@ app.post('/api/quote-pdf', rateLimit, async (req, res) => {
     } else {
       try { const geo = await geocode(a.oneLine); if (geo) addressText = geo.matched; } catch (e) { /* keep the typed address */ }
     }
-    const nextStep = ['Estimate Approved', 'Send Estimate'].includes(b.nextStep) ? b.nextStep : '';
-    const name = [clean(b.firstName), clean(b.lastName)].filter(Boolean).join(' ');
-    const pdf = await buildQuotePdf({
-      price, address: addressText, sqft, services,
-      customer: { name, phone: clean(b.phone), email: clean(b.email) },
-      answers: details, nextStep, showCardNotice: nextStep === 'Estimate Approved',
+    const payload = {
+      key: LEADS_KEY,
+      id: clean(b.submissionId).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || String(Date.now()),
+      approved: nextStep === 'Estimate Approved',
+      name: [clean(b.firstName), clean(b.lastName)].filter(Boolean).join(' '),
+      phone: clean(b.phone),
+      email: clean(b.email),
+      address: addressText,
+      message: buildMessage({ services, price, sqft, area, details, nextStep }),
+    };
+    const r = await fetch(LEADS_WEBAPP_URL, {
+      method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload), signal: AbortSignal.timeout(30000),
     });
-    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="quote.pdf"', 'Cache-Control': 'no-store' });
-    return res.send(pdf);
+    const text = await r.text();
+    let out = null;
+    try { out = JSON.parse(text); } catch (e) { out = null; }
+    if (!r.ok || !out || !out.ok) {
+      console.error('leads sheet rejected the lead:', r.status, String(text).slice(0, 200));
+      return res.status(502).json({ ok: false, message: 'Could not save the lead to the sheet. Please try again, or tell the office.' });
+    }
+    return res.json({ ok: true, added: out.added !== false });
   } catch (err) {
-    console.error('pdf failed:', err.message);
-    return res.status(502).json({ ok: false, message: 'Could not build the quote file. Please try again.' });
+    console.error('submit failed:', err.message);
+    return res.status(502).json({ ok: false, message: 'Could not save the lead to the sheet. Please try again, or tell the office.' });
   }
 });
 
