@@ -49,6 +49,10 @@ button:disabled{opacity:.6;cursor:default}
 .notice p{margin:0;font-weight:600}
 .notice button{margin-top:10px}
 .svc{margin:0 0 4px}
+.endsvc{margin-top:16px;text-align:left}
+.endsvc legend{padding:0 6px 0 0}
+.svcitem.locked .opt{opacity:.85}
+#endBack{margin-top:10px}
 .svc legend{font-size:15px;margin-bottom:10px}
 .svcitem{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg)}
 .svcitem .opt{display:flex;margin:0;font-size:17px;font-weight:600}

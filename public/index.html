@@ -138,10 +138,10 @@
         <div id="resultLine" class="line"></div>
         <ul id="flags" class="flags"></ul>
       </div>
-      <div class="summary">
-        <div class="k">Services requested</div>
-        <ul id="summary"></ul>
-      </div>
+      <fieldset class="svc endsvc">
+        <legend>Services requested (add to the notes, or tick another service)</legend>
+        <div id="endSvcList"></div>
+      </fieldset>
       <fieldset class="status">
         <legend>Next step</legend>
         <label class="opt"><input type="radio" name="estimate" value="Estimate Approved"> Estimate Approved</label>
@@ -170,6 +170,7 @@
         <button id="send" type="button">Submit</button>
         <button id="again" type="button" class="secondary">New quote</button>
       </div>
+      <button id="endBack" type="button" class="secondary">Back</button>
       <p class="msg" id="msg3"></p>
     </section>
   </main>

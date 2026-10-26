@@ -28,32 +28,37 @@
     $('state').appendChild(o);
   });
 
-  // the services list: a checkbox for each, and a notes box that opens under every one except gutter cleaning
-  function buildServices() {
-    var list = $('svcList');
-    list.innerHTML = '';
+  // The services list: a checkbox for each, and a notes box that opens under every one except gutter cleaning.
+  // The same builder draws the list on the services page ('first') and again on the last page ('end').
+  // The last page edits the SAME notes (state.services), so nothing is ever kept twice.
+  function renderServices(listEl, prefix, mode) {
+    listEl.innerHTML = '';
     SERVICES.forEach(function (s, i) {
+      var current = null;
+      state.services.forEach(function (x) { if (x.name === s[0]) current = x; });
       var item = document.createElement('div');
       item.className = 'svcitem';
       var label = document.createElement('label');
       label.className = 'opt';
       var cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.name = 'svc';
       cb.value = s[0];
-      cb.id = 'svc' + i;
+      cb.id = prefix + i;
+      cb.checked = !!current;
       label.appendChild(cb);
       label.appendChild(document.createTextNode(' ' + s[0]));
       item.appendChild(label);
+      item.classList.toggle('on', cb.checked);
       if (s[1]) {
         var box = document.createElement('div');
-        box.className = 'svcnote hidden';
+        box.className = 'svcnote' + (cb.checked ? '' : ' hidden');
         var nl = document.createElement('label');
-        nl.setAttribute('for', 'notes' + i);
+        nl.setAttribute('for', prefix + 'n' + i);
         nl.textContent = 'Notes (notes only, no pricing)';
         var ta = document.createElement('textarea');
-        ta.id = 'notes' + i;
+        ta.id = prefix + 'n' + i;
         ta.maxLength = 600;
+        ta.value = current ? current.notes : '';
         box.appendChild(nl);
         box.appendChild(ta);
         item.appendChild(box);
@@ -61,18 +66,35 @@
           box.classList.toggle('hidden', !cb.checked);
           item.classList.toggle('on', cb.checked);
           if (cb.checked) ta.focus();
+          if (mode === 'end') syncFromEnd();
         });
+        ta.addEventListener('input', function () { if (mode === 'end') syncFromEnd(); });
       } else {
         var hint = document.createElement('div');
         hint.className = 'svchint';
-        hint.textContent = 'Pricing questions come next.';
+        if (mode === 'end') {
+          // gutter cleaning can't be added or removed here without redoing the price
+          cb.disabled = true;
+          item.classList.add('locked');
+          hint.textContent = current ? 'Priced above.' : 'To add gutter cleaning, tap Back and answer the pricing questions.';
+        } else {
+          hint.textContent = 'Pricing questions come next.';
+        }
         item.appendChild(hint);
         cb.addEventListener('change', function () { item.classList.toggle('on', cb.checked); });
       }
-      list.appendChild(item);
+      listEl.appendChild(item);
     });
   }
-  buildServices();
+  function readServices(prefix) {
+    var out = [];
+    SERVICES.forEach(function (s, i) {
+      if ($(prefix + i).checked) out.push({ name: s[0], notes: s[1] ? $(prefix + 'n' + i).value.trim() : '' });
+    });
+    return out;
+  }
+  function syncFromEnd() { state.services = readServices('end'); }
+  renderServices($('svcList'), 'svc', 'first');
 
   function readAddr() {
     return { street: $('street').value.trim(), city: $('city').value.trim(), state: $('state').value, zip: $('zip').value.replace(/\D/g, '').slice(0, 5) };
@@ -121,10 +143,7 @@
   // services chosen: gutter cleaning goes to its pricing questions, anything else goes straight to the end page
   function svcContinue() {
     setMsg('msgSvc', '');
-    var picked = [];
-    SERVICES.forEach(function (s, i) {
-      if ($('svc' + i).checked) picked.push({ name: s[0], notes: s[1] ? $('notes' + i).value.trim() : '' });
-    });
+    var picked = readServices('svc');
     if (!picked.length) { setMsg('msgSvc', 'Pick at least one service.'); return; }
     state.services = picked;
     var hasGC = picked.some(function (p) { return p.name === 'Gutter Cleaning'; });
@@ -178,14 +197,8 @@
       ul.innerHTML = '';
       (d.flags || []).forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
     }
-    var sum = $('summary');
-    sum.innerHTML = '';
-    state.services.forEach(function (s) {
-      var li = document.createElement('li');
-      li.textContent = s.name;
-      if (s.notes) { var sm = document.createElement('small'); sm.textContent = s.notes; li.appendChild(sm); }
-      sum.appendChild(li);
-    });
+    renderServices($('endSvcList'), 'end', 'end');
+    $('endBack').disabled = false;
     Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.checked = false; r.disabled = false; });
     show('cardbox', false);
     show('datebox', false);
@@ -220,6 +233,7 @@
     if (!state.addr) return;
     var estimate = (document.querySelector('input[name=estimate]:checked') || {}).value || '';
     if (!estimate) { setMsg('msg3', 'Choose Estimate Approved or Send Estimate first.'); return; }
+    if (!state.services.length) { setMsg('msg3', 'Pick at least one service.'); return; }
     var body = { street: state.addr.street, city: state.addr.city, state: state.addr.state, zip: state.addr.zip, services: state.services };
     if (state.gc) Object.keys(state.gc).forEach(function (k) { body[k] = state.gc[k]; });
     body.firstName = $('firstName').value.trim();
@@ -246,6 +260,8 @@
       Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.disabled = true; });
       $('dateFrom').disabled = true;
       $('dateTo').disabled = true;
+      $('endBack').disabled = true;
+      Array.prototype.forEach.call($('endSvcList').querySelectorAll('input, textarea'), function (el) { el.disabled = true; });
       setMsg('msg3', 'Submitted. The lead is now on the Leads sheet.');
       $('msg3').classList.add('ok');
     }).catch(function () {
@@ -265,8 +281,8 @@
     ['firstName', 'lastName', 'phone', 'email', 'street', 'city', 'state', 'zip', 'sqft', 'stories', 'roof', 'lastCleaned', 'dateFrom', 'dateTo'].forEach(function (id) { $(id).value = ''; });
     show('notfound', false);
     Array.prototype.forEach.call(document.querySelectorAll('input[name=guards], input[name=access], input[name=solar], input[name=estimate]'), function (r) { r.checked = false; });
-    buildServices();
     state.addr = null; state.pending = null; state.lookup = null; state.services = []; state.gc = null;
+    renderServices($('svcList'), 'svc', 'first');
     showStep('step1');
     $('street').focus();
   }
@@ -283,6 +299,7 @@
   $('quote').addEventListener('click', getPrice);
   $('sqft').addEventListener('keydown', function (e) { if (e.key === 'Enter') getPrice(); });
   Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.addEventListener('change', updateCardBox); });
+  $('endBack').addEventListener('click', function () { renderServices($('svcList'), 'svc', 'first'); setMsg('msgSvc', ''); showStep('stepSvc'); });
   $('send').addEventListener('click', submitLead);
   $('again').addEventListener('click', again);
 })();
