@@ -147,6 +147,20 @@
         <label class="opt"><input type="radio" name="estimate" value="Estimate Approved"> Estimate Approved</label>
         <label class="opt"><input type="radio" name="estimate" value="Send Estimate"> Send Estimate</label>
       </fieldset>
+      <div class="datebox hidden" id="datebox">
+        <h2>Specific Date Request</h2>
+        <div class="two">
+          <div>
+            <label for="dateFrom">FROM</label>
+            <input id="dateFrom" type="date">
+          </div>
+          <div>
+            <label for="dateTo">TO</label>
+            <input id="dateTo" type="date">
+          </div>
+        </div>
+        <p class="hint">Optional. Leave both blank if the customer has no preferred dates.</p>
+      </div>
       <div class="cardbox hidden" id="cardbox">
         <h2>Credit card info</h2>
         <p>Your card is held on file and will not be charged until after the work is complete. Without a card on file we cannot book the service.</p>

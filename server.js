@@ -115,7 +115,12 @@ const LEADS_WEBAPP_URL = process.env.LEADS_WEBAPP_URL || '';
 const LEADS_KEY = process.env.LEADS_KEY || '';
 
 // The text that goes in the lead's Message column.
-function buildMessage({ services, price, sqft, area, details, nextStep }) {
+// "2026-11-04" -> "11/04/2026"
+const usDate = (iso) => iso.slice(5, 7) + '/' + iso.slice(8, 10) + '/' + iso.slice(0, 4);
+const validDate = (iso) => /^\d{4}-\d{2}-\d{2}$/.test(iso) && new Date(iso + 'T12:00:00Z').toISOString().slice(0, 10) === iso;
+const todayET = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+function buildMessage({ services, price, sqft, area, details, nextStep, dateFrom, dateTo }) {
   const lines = ['Services requested:'];
   services.forEach((s) => {
     lines.push('- ' + s.name);
@@ -128,6 +133,7 @@ function buildMessage({ services, price, sqft, area, details, nextStep }) {
   }
   lines.push('');
   lines.push('Next step: ' + nextStep);
+  if (dateFrom) lines.push('Specific Date Request: ' + usDate(dateFrom) + (dateTo && dateTo !== dateFrom ? ' to ' + usDate(dateTo) : ''));
   return lines.join('\n');
 }
 
@@ -145,6 +151,17 @@ app.post('/api/submit-lead', rateLimit, async (req, res) => {
       .filter((x, i, all) => SERVICES.includes(x.name) && all.findIndex((y) => y.name === x.name) === i);
     if (!services.length) return res.status(400).json({ ok: false, message: 'Pick at least one service.' });
     services.sort((x, y) => SERVICES.indexOf(x.name) - SERVICES.indexOf(y.name));
+
+    // Specific Date Request: only on approved estimates, both dates optional
+    let dateFrom = '', dateTo = '';
+    if (nextStep === 'Estimate Approved') {
+      dateFrom = clean(b.dateFrom);
+      dateTo = clean(b.dateTo);
+      if ((dateFrom && !validDate(dateFrom)) || (dateTo && !validDate(dateTo))) return res.status(400).json({ ok: false, message: 'Check the dates and try again.' });
+      if (dateTo && !dateFrom) return res.status(400).json({ ok: false, message: 'Enter the FROM date too, or clear the TO date.' });
+      if (dateFrom && dateFrom < todayET()) return res.status(400).json({ ok: false, message: 'The FROM date can not be in the past.' });
+      if (dateFrom && dateTo && dateTo < dateFrom) return res.status(400).json({ ok: false, message: 'The TO date can not be before the FROM date.' });
+    }
 
     let price = null, sqft = null, area = '', details = {}, addressText = a.oneLine;
     if (services.some((x) => x.name === 'Gutter Cleaning')) {
@@ -172,7 +189,7 @@ app.post('/api/submit-lead', rateLimit, async (req, res) => {
       phone: clean(b.phone),
       email: clean(b.email),
       address: addressText,
-      message: buildMessage({ services, price, sqft, area, details, nextStep }),
+      message: buildMessage({ services, price, sqft, area, details, nextStep, dateFrom, dateTo }),
     };
     const r = await fetch(LEADS_WEBAPP_URL, {
       method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },

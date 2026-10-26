@@ -188,6 +188,8 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.checked = false; r.disabled = false; });
     show('cardbox', false);
+    show('datebox', false);
+    ['dateFrom', 'dateTo'].forEach(function (id) { $(id).value = ''; $(id).disabled = false; });
     setMsg('msg3', '');
     $('msg3').classList.remove('ok');
     $('send').disabled = false;
@@ -197,9 +199,16 @@
   }
 
   // the credit card text is for the CSR to read, and only when the estimate is approved
+  function todayLocal() {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
   function updateCardBox() {
     var chosen = (document.querySelector('input[name=estimate]:checked') || {}).value;
-    show('cardbox', chosen === 'Estimate Approved');
+    var approved = chosen === 'Estimate Approved';
+    show('datebox', approved);
+    show('cardbox', approved);
+    if (approved) { $('dateFrom').min = todayLocal(); $('dateTo').min = todayLocal(); }
   }
 
   function newSubmissionId() {
@@ -219,6 +228,14 @@
     body.email = $('email').value.trim();
     body.nextStep = estimate;
     body.submissionId = state.submissionId;
+    if (estimate === 'Estimate Approved') {
+      var from = $('dateFrom').value, to = $('dateTo').value;
+      if (to && !from) { setMsg('msg3', 'Enter the FROM date too, or clear the TO date.'); return; }
+      if (from && from < todayLocal()) { setMsg('msg3', 'The FROM date can not be in the past.'); return; }
+      if (from && to && to < from) { setMsg('msg3', 'The TO date can not be before the FROM date.'); return; }
+      body.dateFrom = from;
+      body.dateTo = to;
+    }
     var btn = $('send');
     btn.disabled = true;
     btn.textContent = 'Submitting...';
@@ -227,6 +244,8 @@
       if (!d.ok) { setMsg('msg3', d.message || 'Could not submit. Try again.'); btn.disabled = false; btn.textContent = 'Submit'; return; }
       btn.textContent = 'Submitted';
       Array.prototype.forEach.call(document.querySelectorAll('input[name=estimate]'), function (r) { r.disabled = true; });
+      $('dateFrom').disabled = true;
+      $('dateTo').disabled = true;
       setMsg('msg3', 'Submitted. The lead is now on the Leads sheet.');
       $('msg3').classList.add('ok');
     }).catch(function () {
@@ -243,7 +262,7 @@
   }
 
   function again() {
-    ['firstName', 'lastName', 'phone', 'email', 'street', 'city', 'state', 'zip', 'sqft', 'stories', 'roof', 'lastCleaned'].forEach(function (id) { $(id).value = ''; });
+    ['firstName', 'lastName', 'phone', 'email', 'street', 'city', 'state', 'zip', 'sqft', 'stories', 'roof', 'lastCleaned', 'dateFrom', 'dateTo'].forEach(function (id) { $(id).value = ''; });
     show('notfound', false);
     Array.prototype.forEach.call(document.querySelectorAll('input[name=guards], input[name=access], input[name=solar], input[name=estimate]'), function (r) { r.checked = false; });
     buildServices();

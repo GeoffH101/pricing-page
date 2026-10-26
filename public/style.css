@@ -11,7 +11,7 @@ label,legend{display:block;font-weight:600;font-size:14px;margin:12px 0 6px;padd
 label:first-child{margin-top:0}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .two label{margin-top:0}
-input[type=text],input[type=number],input[type=tel],input[type=email],select{width:100%;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+input[type=text],input[type=number],input[type=tel],input[type=email],input[type=date],select{width:100%;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
 fieldset{border:0;margin:12px 0 0;padding:0}
 .opt{display:inline-flex;align-items:center;gap:8px;font-weight:400;margin:0 18px 0 0;font-size:16px}
@@ -36,6 +36,11 @@ button:disabled{opacity:.6;cursor:default}
 .status{margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--line);text-align:left}
 .status legend{padding:0 8px 0 0;margin:0}
 .status .opt{display:flex;margin:0 0 10px;font-size:17px}
+.datebox{margin-top:16px;padding:12px 14px;background:var(--tile);border:1px solid var(--line);border-radius:8px;text-align:left}
+.datebox h2{font-size:16px;margin:0 0 8px}
+.datebox label{margin-top:0}
+.datebox .two > div{min-width:0}
+.datebox input[type=date]{min-width:0;max-width:100%;padding:10px 8px;font-size:16px}
 .cardbox{margin-top:16px;padding:12px 14px;background:var(--tile);border:1px solid var(--line);border-radius:8px;text-align:left}
 .cardbox h2{font-size:16px;margin:0 0 6px}
 .cardbox p{margin:0 0 8px;font-size:15px}
