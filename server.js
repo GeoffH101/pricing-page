@@ -11,6 +11,20 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '10kb' }));
 
+// SITE_MODE=calculator runs the Gutter Service Calculator: the same address lookup and
+// gutter pricing, with no customer details, no other services and no submit to the Leads sheet.
+// The two sites are the same code on two services; each only serves its own pages.
+const CALC_MODE = process.env.SITE_MODE === 'calculator';
+app.use((req, res, next) => {
+  if (CALC_MODE) {
+    if (req.path === '/api/submit-lead' || req.path === '/app.js') return res.status(404).end();
+    if (req.path === '/' || req.path === '/index.html') return res.sendFile(path.join(__dirname, 'public', 'calculator.html'));
+  } else if (/^\/calculator\.(html|js)$/.test(req.path)) {
+    return res.status(404).end();
+  }
+  return next();
+});
+
 // keep the page out of search engines (it is a link-only resource)
 app.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
 app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nDisallow: /\n'));
@@ -210,8 +224,8 @@ app.post('/api/submit-lead', rateLimit, async (req, res) => {
 });
 
 // build marker + whether the sheet settings are present (yes/no only, never the values)
-const BUILD = '2026-10-24-a';
-app.get('/health', (req, res) => res.json({ ok: true, build: BUILD, leadsConfigured: Boolean(LEADS_WEBAPP_URL && LEADS_KEY) }));
+const BUILD = '2026-11-01-a';
+app.get('/health', (req, res) => res.json({ ok: true, build: BUILD, mode: CALC_MODE ? 'calculator' : 'full', leadsConfigured: Boolean(LEADS_WEBAPP_URL && LEADS_KEY) }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3100;
